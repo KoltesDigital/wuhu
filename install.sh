@@ -16,17 +16,16 @@ apt-get update
 
 apt-get -y install \
   apache2 \
+  libapache2-mod-php5 \
+  mysql-server-5.5 \
+  mc \
+  openssl \
   php5 \
   php5-gd \
   php5-mysqlnd \
   php5-curl \
   php5-mbstring \
-  mysql-server-5.5 \
-  libapache2-mod-php5 \
-  mc \
-  git \
-  ssh \
-  sudo
+  ssh
 
 # -------------------------------------------------
 # set up the files / WWW dir
@@ -34,6 +33,7 @@ apt-get -y install \
 mkdir /var/www/entries_private
 mkdir /var/www/entries_public
 mkdir /var/www/screenshots
+mkdir /var/www/www_admin_cert
 
 chmod -R g+rw /var/www
 chown -R www-data:www-data /var/www
@@ -51,6 +51,31 @@ do
 done
 
 # -------------------------------------------------
+# set up SSL for www_admin
+
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /var/www/www_admin_cert/ssl.key -out /var/www/www_admin/ssl.crt
+openssl dhparam -out /var/www/www_admin_cert/dhparam.pem 2048
+
+echo -e \
+  "SSLCipherSuite EECDH+AESGCM:EDH+AESGCM:AES256+EECDH:AES256+EDH\n" \
+  "SSLProtocol All -SSLv2 -SSLv3\n" \
+  "SSLHonorCipherOrder On\n" \
+  "#Header always set Strict-Transport-Security \"max-age=63072000; includeSubdomains; preload\"\n" \
+  "Header always set Strict-Transport-Security \"max-age=63072000; includeSubdomains\"\n" \
+  "Header always set X-Frame-Options DENY\n" \
+  "Header always set X-Content-Type-Options nosniff\n" \
+  "SSLCompression off \n" \
+  "SSLSessionTickets Off\n" \
+  "SSLUseStapling on \n" \
+  "SSLStaplingCache \"shmcb:logs/stapling-cache(150000)\"\n" \
+  "SSLOpenSSLConfCmd DHParameters \"/var/www/www_admin_cert/dhparam.pem\"\n" \
+  > /etc/apache2/conf-available/wuhu-ssl.conf
+
+a2enmod ssl
+a2enmod headers
+a2enconf wuhu-ssl
+
+# -------------------------------------------------
 # set up Apache
 
 rm /etc/apache2/sites-enabled/*
@@ -66,7 +91,7 @@ echo -e \
   "\tCustomLog \${APACHE_LOG_DIR}/party_access.log combined\n" \
   "\t</VirtualHost>\n" \
   "\n" \
-  "<VirtualHost *:80>\n" \
+  "<VirtualHost *:443>\n" \
   "\tDocumentRoot /var/www/www_admin\n" \
   "\tServerName admin.lan\n" \
   "\t<Directory />\n" \
@@ -75,12 +100,15 @@ echo -e \
   "\t</Directory>\n" \
   "\tErrorLog \${APACHE_LOG_DIR}/admin_error.log\n" \
   "\tCustomLog \${APACHE_LOG_DIR}/admin_access.log combined\n" \
+  "\tSSLEngine on\n" \
+  "\tSSLCertificateFile /var/www/www_admin_cert/dhparam.pem\n" \
+  "\tSSLCertificateKeyFile /var/www/www_admin_cert/ssl.key\n" \
   "</VirtualHost>\n" \
   > /etc/apache2/sites-available/wuhu.conf
 
 a2ensite wuhu
 
-echo "Restarting Apache..."
+apache2ctl configtest
 service apache2 restart
 
 # -------------------------------------------------
