@@ -1,0 +1,8 @@
+/entries_private/
+/entries_public/
+/screenshots/
+.htaccess
+.htpasswd
+.oplock
+activeplugins.serialize
+database.inc.php
