@@ -8,15 +8,15 @@ if (!$voter)
 
 $csrf = new CSRFProtect();
 
-if ($_POST["vote"]) 
+if ($_POST["vote"])
 {
   $a = array();
   if ($csrf->ValidateToken())
   {
     if ($voter->SaveVotes())
     {
-      echo "<div class='success'>Votes saved!</div>";
-    } 
+      echo "<div class='alert alert-success' role='alert'>Votes saved!</div>";
+    }
     else
     {
       echo "<div class='failure'>There was an error saving your votes!</div>";
@@ -36,12 +36,12 @@ $query->AddOrder("start");
 run_hook("vote_prepare_dbquery",array("query"=>&$query));
 $compos = SQLLib::selectRows( $query->GetQuery() );
 
-if ($compos) 
+if ($compos)
 {
   echo "<form id='votingform' action='".$_SERVER['REQUEST_URI']."' method='post' enctype='multipart/form-data'>\n";
   $csrf->PrintToken();
-  
-  foreach($compos as $compo) 
+
+  foreach($compos as $compo)
   {
     global $query;
     $query = new SQLSelect();
@@ -50,24 +50,24 @@ if ($compos)
     $query->AddOrder("playingorder");
     run_hook("vote_compo_dbquery",array("query"=>&$query));
     $entries = SQLLib::selectRows( $query->GetQuery() );
-    
-    if ($entries) 
+
+    if ($entries)
     {
       printf("<h3>%s</h3>\n",$compo->name);
       echo "<div class='entrylist votelist'>\n";
 
       $voter->PrepareVotes( $compo );
-     
-      foreach($entries as $entry) 
+
+      foreach($entries as $entry)
       {
         echo "<div class='entry'>\n";
         printf("<div class='screenshot'><a href='screenshot.php?id=%d' target='_blank'><img src='screenshot.php?id=%d&amp;show=thumb'/></a></div>\n",$entry->id,$entry->id);
-        
+
         if($compo->showauthor)
           printf("<div class='title'><b>%s</b> - %s</div>\n",_html($entry->title),_html($entry->author));
         else
           printf("<div class='title'><b>%s</b></div>\n",_html($entry->title));
-          
+
         printf("<div class='vote'>\n");
         $voter->RenderVoteGUI( $compo, $entry );
         printf("</div>\n");
@@ -78,7 +78,7 @@ if ($compos)
   }
   echo "<div id='votesubmit'><input type='submit' value='Submit votes!'/></div>\n";
   echo "</form>\n";
-} 
+}
 
 
 ?>

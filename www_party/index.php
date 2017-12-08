@@ -67,7 +67,7 @@ foreach($rows as $r) {
 
 run_hook("index_menu_parse",array("menu"=>&$menuArray));
 
-$menu = "<ul>\n";
+$menu = "<ul class=\"nav navbar-nav\">\n";
 foreach($menuArray as $v)
   $menu .= "<li>".$v."</li>\n";
 $menu .= "</ul>\n";
